@@ -92,8 +92,8 @@ RECOVERY_TOUCHSCREEN_FLIP_Y := false
 TARGET_RECOVERY_PIXEL_FORMAT := "ABGR_8888"
 
 # Encryption support
-#TW_INCLUDE_CRYPTO := true
-TW_INCLUDE_CRYPTO_SAMSUNG := true
+TW_INCLUDE_CRYPTO := true
+#TW_INCLUDE_CRYPTO_SAMSUNG := true
 #TARGET_HW_DISK_ENCRYPTION := true
 
 # Additional Libraries
@@ -123,3 +123,7 @@ TW_INTERNAL_STORAGE_MOUNT_POINT := "sdcard"
 TW_EXTERNAL_STORAGE_PATH := "/external_sd"
 TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
 
+
+# Decrypt with the stock vold/keymaster/gatekeeper from /system and /vendor
+TW_CRYPTO_USE_SYSTEM_VOLD := hwservicemanager keymaster-3-0 gatekeeper-1-0
+TW_CRYPTO_SYSTEM_VOLD_MOUNT := vendor

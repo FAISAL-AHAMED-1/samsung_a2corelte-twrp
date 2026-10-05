@@ -1,0 +1,6 @@
+service sys_gatekeeper-1-0 /vendor/bin/hw/android.hardware.gatekeeper@1.0-service
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0

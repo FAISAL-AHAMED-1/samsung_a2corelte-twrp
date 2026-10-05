@@ -1,0 +1,6 @@
+service sys_hwservicemanager /system/bin/hwservicemanager
+    user root
+    group root
+    disabled
+    oneshot
+    seclabel u:r:recovery:s0
