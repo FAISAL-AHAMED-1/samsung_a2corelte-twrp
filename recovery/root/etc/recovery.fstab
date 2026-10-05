@@ -5,7 +5,7 @@
 /vendor         ext4    /dev/block/platform/13540000.dwmmc0/by-name/VENDOR        
 /vendor_image   emmc    /dev/block/platform/13540000.dwmmc0/by-name/VENDOR         flags=backup=1;flashimg=1;display="Vendor Image"
 /cache          ext4    /dev/block/platform/13540000.dwmmc0/by-name/CACHE        
-/data           ext4    /dev/block/platform/13540000.dwmmc0/by-name/USERDATA      flags=encryptable=footer;length=-16384
+/data           f2fs    /dev/block/platform/13540000.dwmmc0/by-name/USERDATA      flags=encryptable=footer;length=-16384
 /efs            ext4    /dev/block/platform/13540000.dwmmc0/by-name/EFS           flags=flashimg=1
 /modem          emmc    /dev/block/platform/13540000.dwmmc0/by-name/RADIO
 /misc           emmc    /dev/block/platform/13540000.dwmmc0/by-name/MISC
