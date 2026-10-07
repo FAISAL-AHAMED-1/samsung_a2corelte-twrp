@@ -14,15 +14,27 @@ on:
       DEVICE_TREE_URL:
         description: 'Your Device Tree URL'
         required: true
-        default: 'https://github.com/yolinuxman-design/samsung_a2corelte-twrp'
+        default: 'https://github.com/FAISAL-AHAMED-1/samsung_a2corelte-twrp'
       DEVICE_TREE_BRANCH:
         description: 'Device Tree Branch'
         required: true
-        default: 'main'
+        default: 'twrp-9.0'
       DEVICE_PATH:
         description: 'Device Path inside source'
         required: true
         default: 'device/samsung/a2corelte'
+      DEVICE_TREE_COMMIT:
+        description: 'Pinned Device Tree Commit'
+        required: true
+        default: '1c6a83d22464438aa08e0333bbea85d5eb73d831'
+      RECOVERY_REPO_URL:
+        description: 'Pinned Recovery Fork URL'
+        required: true
+        default: 'https://github.com/FAISAL-AHAMED-1/android_bootable_recovery.git'
+      RECOVERY_COMMIT:
+        description: 'Pinned Recovery Commit'
+        required: true
+        default: '524167f5316bc4a57480cddeb9782b11cf436d46'
       COMMON_TREE_URL:
         description: 'Common Tree URL (leave blank if none)'
         required: false
@@ -56,7 +68,10 @@ jobs:
         echo "Manifest Branch: ${{ github.event.inputs.MANIFEST_BRANCH }}"
         echo "Device Tree: ${{ github.event.inputs.DEVICE_TREE_URL }}"
         echo "Device Tree Branch: ${{ github.event.inputs.DEVICE_TREE_BRANCH }}"
+        echo "Device Tree Commit: ${{ github.event.inputs.DEVICE_TREE_COMMIT }}"
         echo "Device Path: ${{ github.event.inputs.DEVICE_PATH }}"
+        echo "Recovery Fork: ${{ github.event.inputs.RECOVERY_REPO_URL }}"
+        echo "Recovery Commit: ${{ github.event.inputs.RECOVERY_COMMIT }}"
         echo "Device Name: ${{ github.event.inputs.DEVICE_NAME }}"
         echo "Makefile: ${{ github.event.inputs.MAKEFILE_NAME }}"
         echo "Build Target: ${{ github.event.inputs.BUILD_TARGET }}.img"
@@ -111,9 +126,25 @@ jobs:
         repo sync -j$(nproc --all) --force-sync --no-clone-bundle
       working-directory: workspace
 
-    - name: Clone Device Tree
+    - name: Pin Recovery Source
+      run: |
+        test -d bootable/recovery
+        git -C bootable/recovery fetch --no-tags ${{ github.event.inputs.RECOVERY_REPO_URL }} ${{ github.event.inputs.RECOVERY_COMMIT }}
+        git -C bootable/recovery checkout --detach ${{ github.event.inputs.RECOVERY_COMMIT }}
+        test "$(git -C bootable/recovery rev-parse HEAD)" = "${{ github.event.inputs.RECOVERY_COMMIT }}"
+        echo "Recovery source pinned:"
+        git -C bootable/recovery log -1 --oneline
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
+    - name: Clone and Pin Device Tree
       run: |
         git clone --depth=1 ${{ github.event.inputs.DEVICE_TREE_URL }} -b ${{ github.event.inputs.DEVICE_TREE_BRANCH }} ./${{ github.event.inputs.DEVICE_PATH }}
+        cd ./${{ github.event.inputs.DEVICE_PATH }}
+        git fetch --no-tags origin ${{ github.event.inputs.DEVICE_TREE_COMMIT }}
+        git checkout --detach ${{ github.event.inputs.DEVICE_TREE_COMMIT }}
+        test "$(git rev-parse HEAD)" = "${{ github.event.inputs.DEVICE_TREE_COMMIT }}"
+        echo "Device tree source pinned:"
+        git log -1 --oneline
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Clone Common Tree
@@ -144,6 +175,81 @@ jobs:
         lunch ${{ github.event.inputs.MAKEFILE_NAME }}-eng
         make clean
         make ${{ github.event.inputs.BUILD_TARGET }}image -j$(nproc --all)
+      working-directory: ${{ steps.pwd.outputs.workspace-folder }}
+
+    - name: Validate Recovery Image
+      run: |
+        python3 - <<'PY2'
+        import os
+        import struct
+        import sys
+
+        device = "${{ github.event.inputs.DEVICE_NAME }}"
+        target = "${{ github.event.inputs.BUILD_TARGET }}"
+        image = os.path.join("out", "target", "product", device, target + ".img")
+
+        MAX_RAMDISK = 13661699
+
+        if not os.path.isfile(image):
+            print("ERROR: recovery image not found:", image)
+            sys.exit(1)
+
+        with open(image, "rb") as f:
+            header = f.read(2048)
+
+        if header[:8] != b"ANDROID!":
+            print("ERROR: not a classic Android boot image")
+            print("Magic:", repr(header[:8]))
+            sys.exit(1)
+
+        kernel_size = struct.unpack_from("<I", header, 8)[0]
+        ramdisk_size = struct.unpack_from("<I", header, 16)[0]
+        second_size = struct.unpack_from("<I", header, 24)[0]
+        page_size = struct.unpack_from("<I", header, 36)[0]
+        dt_size = struct.unpack_from("<I", header, 40)[0]
+
+        image_size = os.path.getsize(image)
+
+        print("===== RECOVERY IMAGE VALIDATION =====")
+        print("Image:       ", image)
+        print("Image size:  ", image_size)
+        print("Kernel size: ", kernel_size)
+        print("Ramdisk size:", ramdisk_size)
+        print("Second size: ", second_size)
+        print("DT size:     ", dt_size)
+        print("Page size:   ", page_size)
+        print("Hard maximum:", MAX_RAMDISK)
+        print("Margin:      ", MAX_RAMDISK - ramdisk_size)
+
+        if ramdisk_size > MAX_RAMDISK:
+            print("ERROR: RAMDISK EXCEEDS DEVICE LIMIT")
+            sys.exit(1)
+
+        print("OK: ramdisk is within the 13,661,699-byte device limit")
+
+        recovery_commit = "${{ github.event.inputs.RECOVERY_COMMIT }}"
+        actual_recovery = os.popen("git -C bootable/recovery rev-parse HEAD").read().strip()
+
+        if actual_recovery != recovery_commit:
+            print("ERROR: recovery source commit mismatch")
+            print("Expected:", recovery_commit)
+            print("Actual:  ", actual_recovery)
+            sys.exit(1)
+
+        device_tree = "${{ github.event.inputs.DEVICE_PATH }}"
+        device_commit = "${{ github.event.inputs.DEVICE_TREE_COMMIT }}"
+        actual_device = os.popen("git -C " + device_tree + " rev-parse HEAD").read().strip()
+
+        if actual_device != device_commit:
+            print("ERROR: device-tree commit mismatch")
+            print("Expected:", device_commit)
+            print("Actual:  ", actual_device)
+            sys.exit(1)
+
+        print("OK: recovery source commit verified")
+        print("OK: device-tree commit verified")
+        print("===== VALIDATION PASSED =====")
+        PY2
       working-directory: ${{ steps.pwd.outputs.workspace-folder }}
 
     - name: Upload to Release
