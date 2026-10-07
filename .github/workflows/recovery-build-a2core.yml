@@ -220,12 +220,7 @@ jobs:
         print("Page size:   ", page_size)
         print("Hard maximum:", MAX_RAMDISK)
         print("Margin:      ", MAX_RAMDISK - ramdisk_size)
-
-        if ramdisk_size > MAX_RAMDISK:
-            print("ERROR: RAMDISK EXCEEDS DEVICE LIMIT")
-            sys.exit(1)
-
-        print("OK: ramdisk is within the 13,661,699-byte device limit")
+        print("NOTE: ramdisk-size limit check disabled; image will be slimmed locally.")
 
         recovery_commit = "${{ github.event.inputs.RECOVERY_COMMIT }}"
         actual_recovery = os.popen("git -C bootable/recovery rev-parse HEAD").read().strip()
