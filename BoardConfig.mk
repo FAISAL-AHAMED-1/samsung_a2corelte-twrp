@@ -125,5 +125,6 @@ TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
 
 
 # Decrypt using the stock system's vold
-TW_CRYPTO_USE_SYSTEM_VOLD := true
+TW_CRYPTO_USE_SYSTEM_VOLD := hwservicemanager keymaster-3-0 gatekeeper-1-0 tzdaemon
+TW_CRYPTO_SYSTEM_VOLD_MOUNT := vendor
 TW_CRYPTO_SYSTEM_VOLD_DEBUG := true

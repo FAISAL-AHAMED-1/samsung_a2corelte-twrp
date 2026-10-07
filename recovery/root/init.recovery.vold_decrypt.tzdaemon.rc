@@ -1,0 +1,6 @@
+service sys_tzdaemon /vendor/bin/tzdaemon
+    user system
+    group system readproc
+    disabled
+    oneshot
+    seclabel u:r:tzdaemon:s0

@@ -17,7 +17,6 @@ on init
     chown system system /dev/mobicore
 
 on early-fs
-    start vold
 
 on fs
     mount none /system/vendor /vendor bind rec
@@ -52,11 +51,6 @@ on post-fs-data
 # Services
 # ---------------------------------------------------------------------------
 
-service vold /sbin/vold
-    class early_hal
-    user root
-    group root
-    seclabel u:r:recovery:s0
 
 service servicemanager /sbin/servicemanager
     class core

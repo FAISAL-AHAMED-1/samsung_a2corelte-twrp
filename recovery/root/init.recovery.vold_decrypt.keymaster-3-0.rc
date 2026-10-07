@@ -1,0 +1,8 @@
+service sys_keymaster-3-0 /vendor/bin/hw/android.hardware.keymaster@3.0-service
+    user system
+    group system drmrpc
+    setenv PATH /vendor/bin:/system/bin:/system/vendor/bin
+    setenv LD_LIBRARY_PATH /vendor/lib:/system/lib:/system/vendor/lib
+    disabled
+    oneshot
+    seclabel u:r:hal_keymaster_default:s0
