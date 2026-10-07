@@ -1,0 +1,1 @@
+/dev/block/platform/13540000.dwmmc0/by-name/USERDATA /data f2fs nosuid,nodev,noatime,discard,reserve_root=12800,reserve_core=10240,resgid=5555,usrquota,grpquota,fsync_mode=nobarrier wait,check,forceencrypt=footer

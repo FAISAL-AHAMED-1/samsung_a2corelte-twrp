@@ -93,7 +93,8 @@ TARGET_RECOVERY_PIXEL_FORMAT := "ABGR_8888"
 
 # Encryption support
 TW_INCLUDE_CRYPTO := true
-TW_INCLUDE_CRYPTO_SAMSUNG := true
+# Samsung's proprietary crypto is handled by stock system vold/keymaster/gatekeeper
+#TW_INCLUDE_CRYPTO_SAMSUNG := true
 #TARGET_HW_DISK_ENCRYPTION := true
 
 # Additional Libraries
@@ -124,6 +125,6 @@ TW_EXTERNAL_STORAGE_PATH := "/external_sd"
 TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
 
 
-# Decrypt using the stock system's vold
-TW_CRYPTO_USE_SYSTEM_VOLD := true
-TW_CRYPTO_SYSTEM_VOLD_DEBUG := true
+# Use Samsung's installed Android 8.1 vold with its real TEE/keymaster/gatekeeper stack.
+TW_CRYPTO_USE_SYSTEM_VOLD := hwservicemanager keymaster-3-0 gatekeeper-1-0 tzdaemon
+TW_CRYPTO_SYSTEM_VOLD_MOUNT := vendor
